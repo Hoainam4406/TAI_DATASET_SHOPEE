@@ -25,7 +25,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from shopee_crawler import config  # noqa: E402
-from shopee_crawler.parser import normalize  # noqa: E402
+from shopee_crawler.parser import find_sold, normalize  # noqa: E402
 from shopee_crawler.reviews import parse_reviews  # noqa: E402
 from shopee_crawler.storage import (  # noqa: E402
     ensure_dirs,
@@ -174,7 +174,9 @@ def parse_file(path: str) -> dict | None:
     shop_name = html.unescape(sm.group(1)) if sm else ""
 
     sm2 = re.search(r'"(?:historical_sold|sold_count|sold)"\s*:\s*(\d+)', data)
-    sold = int(sm2.group(1)) if sm2 else ""
+    # JSON nhung (so chinh xac) neu co; khong thi doc chu tren giao dien
+    # ("10k+ Sold" / "Đã bán 10k+") — so dau tien la cua san pham chinh.
+    sold = int(sm2.group(1)) if sm2 else find_sold(data)
 
     rv = parse_reviews(data)
     if rating is None and rv["rating_score"] != "":

@@ -19,7 +19,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from shopee_crawler import config  # noqa: E402
-from shopee_crawler.parser import normalize  # noqa: E402
+from shopee_crawler.parser import find_sold, normalize  # noqa: E402
 from shopee_crawler.storage import (  # noqa: E402
     ensure_dirs,
     iter_pages,
@@ -41,13 +41,6 @@ def _money(text: str | None) -> int | None:
         return None
     digits = re.sub(r"[^\d]", "", text)
     return int(digits) * 100000 if digits else None
-
-
-def _sold(text: str | None):
-    if not text:
-        return ""
-    m = re.search(r"([\d.]+)", text.replace(",", ""))
-    return int(m.group(1).replace(".", "")) if m else ""
 
 
 def log(m: str) -> None:
@@ -82,8 +75,7 @@ def parse_file(path: str) -> list[dict]:
             round(price / (1 - disc / 100)) if price and 0 < disc < 100 else (price or 0)
         )
 
-        sm = re.search(r"Đã bán\s*([\d.,]+)", chunk)
-        sold = _sold(sm.group(1)) if sm else ""
+        sold = find_sold(chunk)
 
         out.append(
             {

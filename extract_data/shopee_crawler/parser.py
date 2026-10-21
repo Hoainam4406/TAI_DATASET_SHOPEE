@@ -55,6 +55,46 @@ EXTRA_COLUMNS = [
 ]
 
 
+# So "da ban" hien tren giao dien: "10k+", "1,6k", "1,2tr", "282", "1.234"
+# (?![\d.,]|\s*[₫đ]) : khong lay gia tien ("584.364 ₫") lam so da ban.
+_NUM = r"\d[\d.,]*\s*(?:k|tr|triệu|m)?\+?(?![\d.,]|\s*[₫đ])"
+_TAG = re.compile(r"<[^>]+>")
+# 2 thu tu: "Đã bán 10k+" (nhan truoc, chi tieng Viet) va "10k+ Sold" (so truoc).
+# - "4.9 Đã bán 10k+": "Đã bán" theo sau la so -> khong doc 4.9.
+# - huy hieu "2 Sold 584.364 ₫ ... 3k+ sold": "Sold" theo sau la gia -> bo qua 2.
+#   (nhung "20k+ sold 3-5 Days" van hop le)
+_SOLD = re.compile(
+    rf"đã\s*bán\s*({_NUM})"
+    rf"|({_NUM})\s*(?:đã\s*bán(?!\s*\d)|sold(?!\s*\d[\d.,]*\s*[₫đ]))",
+    re.I,
+)
+
+
+def parse_sold(text: str | None) -> int | str:
+    """Doi '10k+' -> 10000, '1,6k' -> 1600, '1,2tr' -> 1200000, '1.234' -> 1234."""
+    s = (text or "").strip().lower().replace(" ", "").rstrip("+")
+    mult = 1
+    for suffix, m in (("triệu", 1_000_000), ("tr", 1_000_000), ("m", 1_000_000), ("k", 1000)):
+        if s.endswith(suffix):
+            mult, s = m, s[: -len(suffix)]
+            break
+    if mult == 1:
+        # khong co hau to: dau . / , la phan cach hang nghin
+        s = s.replace(".", "").replace(",", "")
+    else:
+        s = s.replace(",", ".")
+    try:
+        return int(round(float(s) * mult))
+    except ValueError:
+        return ""
+
+
+def find_sold(html_text: str) -> int | str:
+    """Tim so 'da ban' DAU TIEN trong doan HTML (ho tro 'Đã bán' va 'Sold')."""
+    m = _SOLD.search(_TAG.sub(" ", html_text or ""))
+    return parse_sold(m.group(1) or m.group(2)) if m else ""
+
+
 def _empty(value: Any) -> bool:
     return value is None or value == "" or (isinstance(value, list) and not value)
 
