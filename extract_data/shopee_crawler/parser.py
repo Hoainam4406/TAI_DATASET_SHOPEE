@@ -52,6 +52,8 @@ EXTRA_COLUMNS = [
     "review_with_comment",
     "review_with_media",
     "reviews",
+    "reviews_extracted",
+    "review_star_counts",
 ]
 
 
@@ -154,13 +156,21 @@ def normalize(data: dict, snapshot_ts: str, host: str = "shopee.vn") -> dict:
 
     stars: dict = {}
     for key, val in breakdown.items():
-        m = re.match(r"\s*(\d)\s*Sao", key, re.I)
+        m = re.match(r"\s*(\d)\s*(?:Sao|star)", key, re.I)
         if m:
             stars[f"rating_{m.group(1)}"] = val
-        elif "Bình luận" in key:
+        elif "Bình luận" in key or "comment" in key.lower():
             stars["review_with_comment"] = val
-        elif "hình ảnh" in key or "video" in key:
+        elif "hình ảnh" in key or "video" in key or "media" in key.lower():
             stars["review_with_media"] = val
+
+    review_counts: dict = {}
+    for r in reviews:
+        try:
+            st = int(r.get("rating"))
+        except (TypeError, ValueError):
+            continue
+        review_counts[str(st)] = review_counts.get(str(st), 0) + 1
 
     return {
         "id": itemid,
@@ -197,6 +207,10 @@ def normalize(data: dict, snapshot_ts: str, host: str = "shopee.vn") -> dict:
         "review_with_comment": stars.get("review_with_comment", ""),
         "review_with_media": stars.get("review_with_media", ""),
         "reviews": json.dumps(reviews, ensure_ascii=False) if reviews else "",
+        "reviews_extracted": len(reviews),
+        "review_star_counts": (
+            json.dumps(review_counts, ensure_ascii=False) if review_counts else ""
+        ),
     }
 
 

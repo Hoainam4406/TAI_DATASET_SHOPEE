@@ -64,24 +64,34 @@ def list_page_dirs(
     return sorted(dirs)
 
 
-def _html_files(folder: Path) -> list[Path]:
-    return sorted(list(folder.glob("*.html")) + list(folder.glob("*.htm")))
+def _html_files(folder: Path, recursive: bool = False) -> list[Path]:
+    if not folder.exists():
+        return []
+    files = sorted(list(folder.glob("*.html")) + list(folder.glob("*.htm")))
+    if recursive:
+        for sub in sorted(folder.iterdir()):
+            if sub.is_dir() and not sub.name.endswith("_files"):
+                files.extend(_html_files(sub, recursive=True))
+    return files
 
 
 def iter_pages(
     pages_dir: Path | str | None = None,
+    recursive: bool = False,
 ) -> list[tuple[str, Path, list[Path]]]:
     """[(date, thu_muc_ngay, [file .html])], da gom theo NGAY CAO.
 
     - Uu tien cac thu muc con `YYYY-MM-DD` trong crawl_manually.
     - File .html nam roi o goc se duoc gom theo mtime vao nhom ngay cua no
       (thu muc dich base/<date> co the chua ton tai).
+    - recursive=True: quet them cac thu muc CON trong tung ngay (vd
+      `reviews\\<itemid>\\`), bo qua thu muc tai nguyen `<...>_files`.
     """
     base = Path(pages_dir or config.PAGES_DIR)
     groups: dict[str, tuple[Path, list[Path]]] = {}
     if base.exists():
         for name, folder in list_page_dirs(base):
-            files = _html_files(folder)
+            files = _html_files(folder, recursive)
             if files:
                 groups[name] = (folder, files)
         for loose in _html_files(base):
@@ -121,6 +131,33 @@ def save_csv(records: list[dict], kind: str, date: str | None = None) -> Path:
     remaining = [c for c in df.columns if c not in ordered]
     df = df[ordered + remaining]
     # utf-8-sig (co BOM) de Excel tren Windows hien dung tieng Viet
+    df.to_csv(path, index=False, encoding="utf-8-sig")
+    return path
+
+
+# Cot cho bang COMMENT PHAN (moi dong = 1 comment, de doc trong Excel,
+# vi cot `reviews` cua shopee_detail_...csv la JSON trong 1 o duy nhat)
+COMMENT_COLUMNS = [
+    "id",
+    "name",
+    "star",
+    "comment",
+    "user",
+    "time",
+    "variant",
+    "attributes",
+    "seller_response",
+    "helpful",
+    "media_count",
+    "cmtid",
+]
+
+
+def save_comments_csv(rows: list[dict], date: str | None = None) -> Path:
+    """1 dong = 1 comment -> shopee_comments_<date>.csv (utf-8-sig cho Excel)."""
+    date = date or crawl_date()
+    path = _processed_dir() / f"shopee_comments_{date}.csv"
+    df = pd.DataFrame(rows, columns=COMMENT_COLUMNS)
     df.to_csv(path, index=False, encoding="utf-8-sig")
     return path
 

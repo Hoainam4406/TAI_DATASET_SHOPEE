@@ -35,6 +35,11 @@ _ANCHOR = re.compile(
     r'<a[^>]+href="https://shopee\.vn/[^"]*?-i\.(\d+)\.(\d+)[^"]*?"', re.I
 )
 
+# Trang CHI TIET san pham (PDP) co ld+json "@type":"Product".
+# Trang danh sach (listing) co "@type":"ItemList". -> bo qua PDP khi boc listing,
+# de khong lan cac the "san pham tuong tu" o cuoi PDP vao CSV listing.
+_PDP_LD = re.compile(r'"@type"\s*:\s*"Product"')
+
 
 def _money(text: str | None) -> int | None:
     if not text:
@@ -113,6 +118,14 @@ def main() -> int:
         log(f"[i] Ngay {date}: boc {len(files)} file HTML ...")
         cards: dict = {}
         for path in files:
+            try:
+                text = open(path, encoding="utf-8", errors="ignore").read()
+            except Exception as exc:  # noqa: BLE001
+                log(f"      ! loi {os.path.basename(path)[:45]}: {str(exc)[:70]}")
+                continue
+            if _PDP_LD.search(text):
+                log(f"      bo qua PDP: {os.path.basename(path)[:45]}")
+                continue
             try:
                 found = parse_file(path)
             except Exception as exc:  # noqa: BLE001

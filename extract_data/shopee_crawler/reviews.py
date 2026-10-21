@@ -33,6 +33,9 @@ _TAG = re.compile(r"<[^>]+>")
 _WS = re.compile(r"\s+")
 _CMTID = re.compile(r'data-cmtid="(\d+)"')
 _MEDIA = re.compile(r"https://[^\"\s]+susercontent\.com/file/[^\"\s]+")
+_ACTIVE = re.compile(
+    r"product-rating-overview__filter--active[^>]*>\s*<span>([^<]+)</span>"
+)
 
 
 def _clean(text: str | None) -> str:
@@ -65,6 +68,19 @@ def _rating_from_stars(chunk: str) -> int | str:
     if not m:
         return ""
     return m.group(1).count("icon-rating-solid") or ""
+
+
+def active_star(data: str) -> int | str | None:
+    """Muc sao dang duoc LOC trong trang da luu.
+
+    Tra ve 1..5 neu bo loc "N Sao"/"N star" dang bat; "all" neu dang o
+    "tat ca"/"all"; None neu khong tim thay bo loc.
+    """
+    m = _ACTIVE.search(data)
+    if not m:
+        return None
+    sm = re.match(r"(\d)\s*(?:[Ss]ao|[Ss]tar)", _clean(m.group(1)))
+    return int(sm.group(1)) if sm else "all"
 
 
 def _attributes(chunk: str) -> dict:
