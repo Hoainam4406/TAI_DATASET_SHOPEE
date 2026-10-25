@@ -19,7 +19,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from shopee_crawler import config  # noqa: E402
-from shopee_crawler.parser import find_sold, normalize  # noqa: E402
+from shopee_crawler.parser import find_sold, normalize, trim  # noqa: E402
 from shopee_crawler.storage import (  # noqa: E402
     ensure_dirs,
     iter_pages,
@@ -59,9 +59,13 @@ def parse_file(path: str) -> list[dict]:
         nm = re.search(r'aria-label="View product:\s*(.*?)"', chunk)
         if not nm:
             nm = re.search(r'alt="(.*?)"', chunk)
-        name = html.unescape(nm.group(1)).strip() if nm else ""
+        name = trim(html.unescape(nm.group(1))) if nm else ""
 
-        im = re.search(r"/file/([a-zA-Z0-9_-]+)", chunk)
+        # Anh chinh: image_ids trong link the SP (co san du anh chua lazy-load);
+        # du phong: URL /file/ dau tien trong the (co the la khung/badge neu anh chua tai).
+        im = re.search(r"image_ids=([a-zA-Z0-9_-]+)", m.group(0)) or re.search(
+            r"/file/([a-zA-Z0-9_-]+)", chunk
+        )
         image = im.group(1) if im else ""
 
         pm = re.search(r'text-base/5 font-medium">([\d.,]+)</span>', chunk)

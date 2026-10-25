@@ -95,6 +95,23 @@ def find_sold(html_text: str) -> int | str:
     return parse_sold(m.group(1) or m.group(2)) if m else ""
 
 
+_BOM = chr(0xFEFF)
+
+
+def trim(text: Any) -> str:
+    """Bo khoang trang VA ky tu BOM o 2 dau — giong String.trim() cua JS (extension).
+
+    str.strip() cua Python khong coi BOM la khoang trang, nen mo ta Shopee hay con
+    duoi "\\n\\n<BOM>\\n\\n<BOM>" o cuoi.
+    """
+    s = str(text or "")
+    while True:
+        t = s.strip().strip(_BOM)
+        if t == s:
+            return t
+        s = t
+
+
 def _empty(value: Any) -> bool:
     return value is None or value == "" or (isinstance(value, list) and not value)
 
@@ -204,7 +221,7 @@ def normalize(data: dict, snapshot_ts: str, host: str = "shopee.vn") -> dict:
 
     return {
         "id": itemid,
-        "name": (item.get("name") or "").strip(),
+        "name": trim(item.get("name")),
         "price": price,
         "original_price": original,
         "discount_rate": discount,
@@ -213,7 +230,7 @@ def normalize(data: dict, snapshot_ts: str, host: str = "shopee.vn") -> dict:
         "sold_count": item.get("sold", ""),
         "seller_id": shopid,
         "seller_name": seller_name,
-        "brand_name": str(brand).strip(),
+        "brand_name": trim(brand),
         "category_id": category_id,
         "thumbnail_url": _image_url(main_hash, thumb=True),
         "main_image_url": _image_url(main_hash),

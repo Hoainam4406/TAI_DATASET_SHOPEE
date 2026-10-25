@@ -25,7 +25,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from shopee_crawler import config  # noqa: E402
-from shopee_crawler.parser import find_sold, normalize  # noqa: E402
+from shopee_crawler.parser import find_sold, normalize, trim  # noqa: E402
 from shopee_crawler.reviews import parse_reviews  # noqa: E402
 from shopee_crawler.storage import (  # noqa: E402
     ensure_dirs,
@@ -116,8 +116,8 @@ def parse_file(path: str) -> dict | None:
     if not prod:
         return None
 
-    name = html.unescape(str(prod.get("name") or "")).strip()
-    desc = html.unescape(str(prod.get("description") or "")).strip()
+    name = trim(html.unescape(str(prod.get("name") or "")))
+    desc = trim(html.unescape(str(prod.get("description") or "")))
     url = prod.get("url") or ""
 
     price = _ld_price((_as_list(prod.get("offers")) or [{}])[0].get("price")
@@ -170,8 +170,16 @@ def parse_file(path: str) -> dict | None:
         cm = re.search(r'"catid"\s*:\s*(\d+)', data)
         catid = int(cm.group(1)) if cm else None
 
+    # Ten shop: JSON nhung "shop_name" (khong phai trang nao cung co) -> du phong
+    # ld+json Product.offers.seller.name (~40% trang PDP chi co o day).
     sm = re.search(r'"shop_name"\s*:\s*"([^"]+)"', data)
     shop_name = html.unescape(sm.group(1)) if sm else ""
+    if not shop_name:
+        for offer in _as_list(prod.get("offers")):
+            seller = offer.get("seller") if isinstance(offer, dict) else None
+            if isinstance(seller, dict) and seller.get("name"):
+                shop_name = trim(html.unescape(str(seller["name"])))
+                break
 
     sm2 = re.search(r'"(?:historical_sold|sold_count|sold)"\s*:\s*(\d+)', data)
     # JSON nhung (so chinh xac) neu co; khong thi doc chu tren giao dien
