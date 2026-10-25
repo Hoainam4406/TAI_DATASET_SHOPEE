@@ -1,0 +1,10 @@
+{
+  "name": "shopee-crawler-extension",
+  "private": true,
+  "type": "module",
+  "description": "Chi dung de chay test/CLI bang Node; Chrome bo qua file nay.",
+  "scripts": {
+    "process": "node tools/process_folder.mjs",
+    "test": "node --test"
+  }
+}

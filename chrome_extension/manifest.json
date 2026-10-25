@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Shopee Crawler — TAI Dataset",
+  "version": "1.0.0",
+  "description": "Tự động tìm keyword, mở trang sản phẩm Shopee, lưu HTML vào thư mục dự án và xuất CSV dữ liệu cuối.",
+  "minimum_chrome_version": "122",
+  "action": {
+    "default_title": "Mở Shopee Crawler",
+    "default_icon": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+  },
+  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "background": { "service_worker": "background.js" },
+  "permissions": ["scripting", "downloads", "notifications", "unlimitedStorage"],
+  "host_permissions": [
+    "https://shopee.vn/*",
+    "https://*.shopee.vn/*",
+    "https://*.susercontent.com/*",
+    "https://api.github.com/*",
+    "https://github.com/login/*"
+  ]
+}

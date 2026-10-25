@@ -8,6 +8,11 @@ danh mục, shop…) để dùng cho dự án **RecSys multimodal** (user + text
 > Vì không gửi request tự động tới Shopee nên **không bị chặn / không cần đăng
 > nhập lại**.
 
+> **Mới — tự động hoá bằng Chrome extension:** `chrome_extension\` tự tìm keyword, mở
+> trang sản phẩm, lưu HTML vào `crawl_manually\<ngày>\` và xuất luôn
+> `csv_processed\shopee_final_<ngày>.csv` (dữ liệu cuối) + ảnh, không cần Ctrl+S hay
+> chạy Python. Xem [chrome_extension/README.md](chrome_extension/README.md).
+
 ---
 
 ## 1. Yêu cầu & cài đặt

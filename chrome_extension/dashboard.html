@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shopee Crawler</title>
+  <link rel="icon" href="icons/icon48.png">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7.5V18a1.5 1.5 0 0 0 1.5 1.5h15A1.5 1.5 0 0 0 21 18V9a1.5 1.5 0 0 0-1.5-1.5h-7.2L9.9 5.1a1.5 1.5 0 0 0-1.06-.44H4.5A1.5 1.5 0 0 0 3 6.16Z"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.5v13l11-6.5Z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5.5v13M16 5.5v13"/></symbol>
+      <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="1.5"/></symbol>
+      <symbol id="i-redo" viewBox="0 0 24 24"><path d="M19.5 5v5h-5"/><path d="M19 10a7.5 7.5 0 1 0 1 5"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.2 2.4 2.4 4.6-4.9"/></symbol>
+      <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 2.8 19.5h18.4Z"/><path d="M12 10v4.2M12 17h.01"/></symbol>
+      <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 8.5-8.5M16 7l2.5 2.5M14 9l2 2"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15.5V4.5M7.5 9 12 4.5 16.5 9"/><path d="M4.5 15v3a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-3"/></symbol>
+      <symbol id="i-table" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><path d="M3.5 9.5h17M9.5 9.5v10"/></symbol>
+    </defs>
+  </svg>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <img src="icons/icon48.png" alt="" width="22" height="22">
+        <span class="brand-name">Shopee Crawler</span>
+        <span class="brand-meta">TAI Dataset · v1.0</span>
+      </div>
+      <span id="state" class="badge neutral"><span class="dot"></span><span id="stateText">Sẵn sàng</span></span>
+    </div>
+  </header>
+
+  <div class="page">
+    <div id="blockedBanner" class="alert" role="alert" hidden>
+      <svg class="ic"><use href="#i-warn"/></svg>
+      <div class="alert-text">
+        <strong>Shopee đang đòi captcha / đăng nhập.</strong>
+        Mở cửa sổ Shopee để xử lý — xong là extension tự chạy tiếp.
+      </div>
+      <div class="alert-actions">
+        <button id="focusShopee" class="btn">Mở cửa sổ Shopee</button>
+        <button id="muteAlarm" class="btn">Tắt chuông</button>
+      </div>
+    </div>
+
+    <section class="intro reveal" style="--i:0">
+      <p class="eyebrow">shopee.vn → crawl_manually → csv_processed</p>
+      <h1>Thu thập dữ liệu sản phẩm</h1>
+      <p class="lede">Nhập keyword, extension tự tìm kiếm, mở từng trang sản phẩm, lưu HTML vào thư mục dự án
+        và xuất bảng <code>shopee_final</code> cho RecSys.</p>
+    </section>
+
+    <section class="stats reveal" style="--i:1" aria-label="Thống kê job">
+      <div class="stat"><span class="stat-label">Trang tìm kiếm</span><span class="stat-value" id="sListing">0</span></div>
+      <div class="stat"><span class="stat-label">Trang sản phẩm</span><span class="stat-value" id="sPdp">0</span></div>
+      <div class="stat"><span class="stat-label">Bỏ qua (đã có)</span><span class="stat-value" id="sSkipped">0</span></div>
+      <div class="stat"><span class="stat-label">Lỗi</span><span class="stat-value" id="sFailed">0</span></div>
+      <div class="stat"><span class="stat-label">Xác minh / cửa sổ bị ẩn</span><span class="stat-value" id="sBlocked">0</span></div>
+    </section>
+
+    <main class="layout">
+      <div class="col">
+        <section class="card reveal" style="--i:2">
+          <div class="card-head"><span class="step">01</span><h2>Thư mục dự án</h2></div>
+          <div id="folderStatus" class="callout"></div>
+          <div class="row">
+            <button id="pickFolder" class="btn"><svg class="ic"><use href="#i-folder"/></svg>Chọn thư mục</button>
+            <button id="grantFolder" class="btn" hidden>Cấp lại quyền ghi</button>
+            <button id="forgetFolder" class="btn-text" hidden>Bỏ chọn</button>
+          </div>
+        </section>
+
+        <section class="card reveal" style="--i:3">
+          <div class="card-head"><span class="step">02</span><h2>Keyword</h2></div>
+          <label class="field">
+            <span class="field-label">Mỗi dòng một keyword</span>
+            <textarea id="keywords" rows="5" spellcheck="false" placeholder="tai nghe không dây&#10;áo thun nam&#10;bình giữ nhiệt"></textarea>
+          </label>
+          <div class="grid2">
+            <div class="field">
+              <span class="field-label">Trang kết quả / keyword</span>
+              <div class="qty">
+                <input id="pages" type="number" min="1" aria-label="Số trang kết quả mỗi keyword">
+                <label class="opt inline"><input id="pagesAll" type="checkbox"><span>Tất cả</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label">Trang sản phẩm / keyword</span>
+              <div class="qty">
+                <input id="maxProducts" type="number" min="0" aria-label="Số trang sản phẩm mỗi keyword">
+                <label class="opt inline"><input id="productsAll" type="checkbox"><span>Tất cả</span></label>
+              </div>
+            </div>
+          </div>
+          <p id="fullHint" class="hint qty-hint" hidden></p>
+
+          <div class="options">
+            <label class="opt"><input id="fetchPdp" type="checkbox"><span>Mở trang chi tiết sản phẩm</span></label>
+            <label class="opt"><input id="scrollReviews" type="checkbox"><span>Cuộn tới phần đánh giá để lấy comment</span></label>
+            <label class="opt"><input id="skipOtherDays" type="checkbox"><span>Bỏ qua sản phẩm đã lưu ở các ngày trước</span></label>
+            <label class="opt"><input id="downloadImages" type="checkbox"><span>Tải ảnh chính khi xong</span></label>
+            <div class="opt-row">
+              <label class="opt"><input id="alarm" type="checkbox"><span>Chuông báo liên tục khi Shopee đòi captcha / đăng nhập</span></label>
+              <button id="testAlarm" class="btn-text" type="button">Thử chuông</button>
+            </div>
+          </div>
+
+          <details class="accordion">
+            <summary>Tốc độ và thời gian nghỉ</summary>
+            <p class="hint">Chạy chậm hơn thì Shopee ít đòi xác minh hơn.</p>
+            <div class="grid2">
+              <label class="field"><span class="field-label">Nghỉ giữa 2 trang, từ (giây)</span><input id="delayMin" type="number" min="1" step="0.5"></label>
+              <label class="field"><span class="field-label">đến (giây)</span><input id="delayMax" type="number" min="1" step="0.5"></label>
+              <label class="field"><span class="field-label">Nghỉ dài sau mỗi N trang</span><input id="breakEvery" type="number" min="0"></label>
+              <label class="field"><span class="field-label">Nghỉ dài từ / đến (giây)</span>
+                <span class="pair"><input id="breakMin" type="number" min="0" aria-label="Nghỉ dài từ"><input id="breakMax" type="number" min="0" aria-label="Nghỉ dài đến"></span>
+              </label>
+              <label class="field"><span class="field-label">Chờ ảnh tải tối đa / trang (giây)</span><input id="imageWait" type="number" min="0" max="120"></label>
+            </div>
+          </details>
+
+          <div class="actions">
+            <button id="start" class="btn primary"><svg class="ic fill"><use href="#i-play"/></svg>Bắt đầu cào</button>
+            <button id="resumeJob" class="btn" hidden><svg class="ic fill"><use href="#i-play"/></svg>Tiếp tục job</button>
+            <button id="pause" class="btn" hidden><svg class="ic"><use href="#i-pause"/></svg><span>Tạm dừng</span></button>
+            <button id="stop" class="btn danger" hidden><svg class="ic"><use href="#i-stop"/></svg>Dừng</button>
+          </div>
+        </section>
+
+        <section class="card reveal" style="--i:4">
+          <div class="card-head"><span class="step">03</span><h2>Xử lý dữ liệu</h2></div>
+          <p class="hint">Bóc lại toàn bộ file <code>.html</code> của một ngày, kể cả file lưu tay bằng
+            <kbd>Ctrl</kbd> <kbd>S</kbd>, ra <code>listing</code>, <code>detail</code> và <code>final</code>.</p>
+          <div class="row">
+            <select id="processDate" aria-label="Ngày cần xử lý"></select>
+            <label class="opt inline"><input id="processImages" type="checkbox" checked><span>Tải ảnh</span></label>
+            <button id="process" class="btn"><svg class="ic"><use href="#i-redo"/></svg>Xử lý</button>
+          </div>
+        </section>
+
+        <section class="card reveal" style="--i:5">
+          <div class="card-head"><span class="step">04</span><h2>Cào chung (GitHub)</h2></div>
+          <p class="hint">Cào chung với nhóm: nhận keyword chưa ai làm, cào xong đẩy lên
+            <code>data/&lt;keyword&gt;/&lt;ngày&gt;.csv</code> trong repo GitHub của nhóm.</p>
+          <label class="field"><span class="field-label">Repo GitHub của nhóm</span>
+            <input id="teamRepo" type="text" placeholder="ten-org/shopee-data" spellcheck="false" autocomplete="off"></label>
+
+          <div id="teamLoggedOut" class="row">
+            <button id="teamLogin" class="btn dark"><svg class="ic"><use href="#i-key"/></svg>Đăng nhập bằng GitHub</button>
+          </div>
+
+          <div id="teamDevice" class="device" hidden>
+            <span class="field-label">Nhập mã này trên trang GitHub (đã chép sẵn, chỉ cần dán):</span>
+            <div id="teamCode" class="device-code" aria-live="polite"></div>
+            <div class="row">
+              <button id="teamOpenGithub" class="btn">Mở trang nhập mã</button>
+              <button id="teamCopy" class="btn-text" type="button">Chép lại mã</button>
+              <button id="teamCancel" class="btn-text push" type="button">Huỷ</button>
+            </div>
+            <p id="teamDeviceHint" class="hint device-hint">Đang chờ bạn bấm Authorize trên GitHub…</p>
+          </div>
+
+          <div id="teamLoggedIn" class="row" hidden>
+            <span id="teamUser" class="team-user"></span>
+            <button id="teamCheck" class="btn">Kiểm tra repo</button>
+            <button id="teamLogout" class="btn-text push" type="button">Đăng xuất</button>
+          </div>
+
+          <div id="teamStatus" class="callout" hidden></div>
+
+          <details class="accordion">
+            <summary>Dùng token thay cho đăng nhập</summary>
+            <p class="hint">Token fine-grained, chỉ chọn repo của nhóm, quyền <em>Contents: Read and write</em>.</p>
+            <div class="qty">
+              <input id="teamToken" type="password" placeholder="github_pat_..." spellcheck="false" autocomplete="off" aria-label="Token GitHub">
+              <button id="teamConnect" class="btn">Lưu token</button>
+            </div>
+          </details>
+          <details class="accordion">
+            <summary>Cấu hình nhóm (GitHub App)</summary>
+            <label class="field"><span class="field-label">Client ID của GitHub App (khác App ID)</span>
+              <input id="teamClientId" type="text" placeholder="Iv23li..." spellcheck="false" autocomplete="off"></label>
+            <p class="hint">Người quản lý tạo GitHub App một lần rồi gửi Client ID cho nhóm, hoặc điền sẵn vào
+              <code>team.config.json</code> (xem <code>team_dataset/README.md</code>).</p>
+          </details>
+
+          <div class="team-block">
+            <span class="field-label">Danh sách keyword chung</span>
+            <div class="row">
+              <input id="teamClaimN" type="number" min="1" max="100" value="5" aria-label="Số keyword muốn nhận" class="num-sm">
+              <button id="teamClaim" class="btn">Nhận keyword</button>
+              <button id="teamAdd" class="btn-text" type="button">Đưa keyword ở ô 02 lên danh sách</button>
+            </div>
+          </div>
+
+          <div class="team-block">
+            <span class="field-label">Đẩy dữ liệu đã cào</span>
+            <div class="row">
+              <select id="teamDate" aria-label="Ngày cần đẩy"></select>
+              <button id="teamPush" class="btn"><svg class="ic"><use href="#i-upload"/></svg>Đẩy lên GitHub</button>
+            </div>
+            <label class="opt"><input id="teamAuto" type="checkbox"><span>Tự đẩy lên khi cào xong</span></label>
+          </div>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="card reveal" style="--i:6">
+          <div class="card-head">
+            <h2>Tiến độ</h2>
+            <span id="jobDate" class="mono-tag" hidden></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Keyword</th><th class="num">Trang tìm kiếm</th><th class="num">SP thấy</th><th>Trang sản phẩm</th><th>Trạng thái</th></tr></thead>
+              <tbody id="progress"></tbody>
+            </table>
+          </div>
+          <div id="emptyProgress" class="empty">
+            <svg class="ic lg"><use href="#i-table"/></svg>
+            <p>Chưa có job. Nhập keyword ở bước 02 rồi bấm <strong>Bắt đầu cào</strong>.</p>
+          </div>
+        </section>
+
+        <section class="card reveal" style="--i:7">
+          <div class="card-head">
+            <h2>Nhật ký</h2>
+            <span id="logCount" class="muted small"></span>
+            <button id="clearLog" class="btn-text push">Xoá</button>
+          </div>
+          <div id="log" class="log" role="log" aria-live="polite"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="dashboard.js"></script>
+</body>
+</html>

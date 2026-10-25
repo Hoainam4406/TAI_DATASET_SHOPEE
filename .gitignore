@@ -1,0 +1,10 @@
+# Du lieu cao (nang, chua an danh nguoi mua) - moi nguoi tu cao tren may minh
+crawl_manually/
+image/
+csv_processed/
+
+# Ket qua gop du lieu nhom
+team_dataset/build/
+
+# Python
+__pycache__/
