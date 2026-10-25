@@ -7,7 +7,8 @@ import { needsRefresh, pollDeviceFlow, refreshToken, startDeviceFlow } from "./l
 import { TeamSync } from "./lib/teamsync.js";
 
 const $ = (id) => document.getElementById(id);
-const SETTING_IDS = Object.keys(DEFAULTS);
+// chi lay setting co o input trong dashboard.html (thieu o -> crawler dung gia tri DEFAULTS)
+const SETTING_IDS = Object.keys(DEFAULTS).filter((id) => $(id));
 const STATE = {
   idle: ["neutral", "Sẵn sàng"],
   running: ["running", "Đang chạy"],
