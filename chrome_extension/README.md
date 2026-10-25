@@ -109,8 +109,11 @@ keyword. Mỗi trang chi tiết cũng ghi kèm keyword, trang và thứ hạng l
 không bao giờ mất keyword. (Dữ liệu cào trước bản cập nhật này thì không có thông tin đó.)
 
 **Đủ ~60 sản phẩm / trang:** Shopee nạp đợt sản phẩm cuối khá chậm. Nếu tới cuối trang mà chưa
-đủ ~55 sản phẩm và chưa phải trang cuối, extension cuộn lên-xuống lại tối đa 4 lần để chờ.
-Vẫn thiếu thì tải lại trang một lần và giữ bản có nhiều sản phẩm hơn; log ghi rõ số sản phẩm.
+đủ 60 thẻ và chưa phải trang cuối, extension cuộn lên-xuống lại tối đa 4 lần để chờ.
+Vẫn thiếu (hoặc còn thẻ chưa hiện) thì tải lại trang tối đa N lần (ô "Tải lại trang tìm kiếm
+thiếu thẻ", mặc định 4) và giữ bản có nhiều thẻ nhất. Tải lại mà ra đúng số thẻ như lần trước
+thì coi đó là số thẻ thật của trang và dừng tải lại. Trang vẫn được lưu dù ít hơn 60 thẻ (có
+trang thật sự chỉ có 59 sản phẩm); log ghi rõ số thẻ.
 
 `shopee_final_<ngày>.csv` gộp listing với chi tiết theo `id` (chi tiết được ưu tiên;
 giá gốc / % giảm lấy từ listing vì trang chi tiết không có). Ngoài các cột của

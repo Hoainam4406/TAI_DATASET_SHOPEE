@@ -293,7 +293,7 @@ export async function capturePage(kind, opts) {
     // count = so THE trong luoi (thuong 60); ready = the da render; unique = SP khac nhau
     // (Shopee co the lap lai 1 SP quang cao o nhieu the)
     const g = grid();
-    // short = chua du 60 the (tru trang cuoi) hoac con the chua hien -> crawler khong luu ban nay
+    // short = chua du 60 the (tru trang cuoi) hoac con the chua hien -> crawler tai lai, giu ban nhieu the nhat
     const short = (g.cards < o.expectedPerPage && !lastPage()) || g.ready < g.cards;
     return finish({ count: g.cards, ready: g.ready, unique: g.unique, totalPages: totalPages(), images, nudges, short });
   }

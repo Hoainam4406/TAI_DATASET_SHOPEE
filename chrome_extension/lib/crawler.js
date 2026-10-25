@@ -28,7 +28,7 @@ export const DEFAULTS = {
   skipOtherDays: false, // bo qua SP da co PDP o NGAY KHAC
   downloadImages: true,
   imageWait: 15, // giay toi da cho anh lazy-load tren 1 trang truoc khi luu
-  listingRetries: 4, // trang tim kiem chua du 60 the: tai lai toi da N lan, van thieu -> KHONG luu
+  listingRetries: 4, // trang tim kiem chua du 60 the: tai lai toi da N lan, luu ban nhieu the nhat
   alarm: true, // chuong keu lien tuc khi Shopee doi captcha / dang nhap
 };
 
@@ -391,7 +391,7 @@ export class Crawler {
       }
       const missed = this.job.keywords.filter((k) => k.missedPages?.length);
       if (missed.length) {
-        this.log(`Trang tìm kiếm KHÔNG lưu vì chưa đủ 60 thẻ: ${missed.map((k) => `"${k.keyword}" trang ${k.missedPages.join(", ")}`).join("; ")}`
+        this.log(`Trang tìm kiếm chưa cào được: ${missed.map((k) => `"${k.keyword}" trang ${k.missedPages.join(", ")}`).join("; ")}`
           + " — hãy cào lại các keyword này.", "warn");
       }
       const out = await this.process(date, { images: settings.downloadImages });
@@ -438,18 +438,21 @@ export class Crawler {
       const url = searchUrl(kw.keyword, page);
       const total = s.pagesAll && !kw.totalPages ? "?" : pageLimit(s, kw.totalPages);
       this.log(`"${kw.keyword}" — trang ${page}/${total}`, "step");
-      // chi luu khi du 60 the va moi the da hien link (trang cuoi: moi the da hien);
-      // thieu -> tai lai trang, nghi lau dan; het luot van thieu -> bo, KHONG luu ban thieu
+      // chua du 60 the hoac con the chua hien -> tai lai trang (nghi lau dan), giu ban co
+      // nhieu the da hien nhat; het luot van thieu VAN LUU ban do (co trang that su < 60 SP).
+      // Tai lai ra dung ket qua cu -> coi la so the that cua trang, thoi tai lai.
       let r = await this.capture(url, "listing");
       const retries = Math.max(0, Number(s.listingRetries ?? DEFAULTS.listingRetries));
       for (let attempt = 1; r?.short && attempt <= retries; attempt++) {
-        this.log(`mới có ${r.ready}/${r.count} thẻ đã hiện (cần đủ 60) — tải lại trang (lần ${attempt}/${retries}).`, "warn");
+        this.log(`mới có ${r.ready}/${r.count} thẻ đã hiện — tải lại trang để thử lấy thêm (lần ${attempt}/${retries}).`, "warn");
         await this.wait(rand(4, 8) * 1000 * attempt);
-        r = await this.capture(url, "listing");
+        const next = await this.capture(url, "listing");
+        const same = next && next.count === r.count && next.ready === r.ready;
+        if (next && (next.ready > r.ready || (next.ready === r.ready && next.count > r.count))) r = next;
+        if (same) break;
       }
       if (r?.short) {
-        this.log(`vẫn chỉ có ${r.ready}/${r.count} thẻ sau ${retries} lần tải lại — KHÔNG lưu trang này.`, "error");
-        r = null;
+        this.log(`giữ bản nhiều thẻ nhất: ${r.ready}/${r.count} thẻ đã hiện (trang này có thể thật sự ít hơn 60 SP).`, "warn");
       }
       let stop = false;
       if (!r) {
